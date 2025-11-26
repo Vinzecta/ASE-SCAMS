@@ -1,0 +1,45 @@
+### 1. Create a Teacher
+POST http://localhost:5000/api/teachers
+Content-Type: application/json
+
+{
+  "name": "Thay Hung",
+  "email": "hung@university.edu.vn"
+}
+
+GET http://localhost:5000/api/teachers
+
+### 2. Create a Course
+POST http://localhost:5000/api/courses
+Content-Type: application/json
+
+{
+  "name": "Advanced Mathematics",
+  "code": "MTH202"
+}
+
+### 3. Create a Room
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+
+{
+  "name": "Lab A",
+  "capacity": 40,
+  "type": "Lab"
+}
+
+### 4. Create a Schedule (Vietnam Time: 2 PM to 4 PM)
+# Replace the IDs below with the real ones you got from the responses above!
+POST http://localhost:5000/api/schedule
+Content-Type: application/json
+
+{
+  "teacherId": "REPLACE_WITH_TEACHER_ID",
+  "courseId": "REPLACE_WITH_COURSE_ID",
+  "roomId": "REPLACE_WITH_ROOM_ID",
+  "startTime": "2025-10-25T14:00:00+07:00",
+  "endTime": "2025-10-25T16:00:00+07:00"
+}
+
+### 5. Get All Schedules
+GET http://localhost:5000/api/schedule
