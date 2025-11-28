@@ -3,11 +3,12 @@ import RoomBooking from "./features/RoomBooking/RoomBooking";
 import Login from "./features/Authentication/Login";
 import SignUp from "./features/Authentication/SignUp";
 import ForgotPassword from "./features/Authentication/ResetPassword";
+import CalendarCheckPage from "../src/features/CalendarCheck/CalendarCheckPage";
 import "./App.css";
 
 const Dashboard = () => (
     <div>
-        <h1>Trang chủ</h1>
+        <h1>Home Page</h1>
     </div>
 );
 
@@ -19,7 +20,10 @@ function App() {
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/book-room" element={<RoomBooking />} />
+            <Route path="/calendar-check" element={<CalendarCheckPage />} />
+
         </Routes>
+        
     );
 }
 
