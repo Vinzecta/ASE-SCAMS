@@ -1,0 +1,15 @@
+{
+  "courseId": "692c65b55a22c7ebc3e7dccd",
+  "teacherId": "692713821cf3e3eb3f5cccb6",
+  "groupId": "CC02",
+  "credit": 3,
+  "sessions": [
+    {
+      "day": 2,
+      "timeStart": "10:00",
+      "timeEnd": "12:15",
+      "weeks": [1, 2, 3, 4, 5],
+      "roomId": "692717abb506decac8764a26"
+    }
+  ]
+}

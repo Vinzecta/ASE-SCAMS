@@ -1,0 +1,17 @@
+[
+  {
+    "courseCode": "CO3049",
+    "courseName": "Web Programming",
+    "group": "CC01",
+    "credit": 3,
+    "sessions": [
+      {
+        "weeks": [38, 41, 44, 47],
+        "day": 2,
+        "timeStart": "12:00",
+        "timeEnd": "13:50",
+        "room": "C6-401"
+      }
+    ]
+  }
+]
