@@ -62,140 +62,149 @@ function minutesFromHHMM(t: string) {
   return hh * 60 + mm;
 }
 
-async function mockFetchStudentSchedule(): Promise<Course[]> {
-  await new Promise((r) => setTimeout(r, 300));
+// async function mockFetchStudentSchedule(): Promise<Course[]> {
+//   await new Promise((r) => setTimeout(r, 300));
 
-  return [
-    {
-      courseCode: "SA0002",
-      courseName: "Student Activities",
-      group: "CC02",
-      credit: 0,
-      sessions: [
-        {
-          weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 7,
-          timeStart: "--:--",
-          timeEnd: "--:--",
-          room: "CS-LTK",
-        },
-      ],
-    },
+//   return [
+//     {
+//       courseCode: "SA0002",
+//       courseName: "Student Activities",
+//       group: "CC02",
+//       credit: 0,
+//       sessions: [
+//         {
+//           weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 7,
+//           timeStart: "--:--",
+//           timeEnd: "--:--",
+//           room: "CS-LTK",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3049",
-      courseName: "Web Programming",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [ 38, 41, 44, 47],
-          day: 2,
-          timeStart: "12:00",
-          timeEnd: "13:50",
-          room: "C6-401",
-        },
-      ],
-    },
+//     {
+//       courseCode: "CO3049",
+//       courseName: "Web Programming",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [ 38, 41, 44, 47],
+//           day: 2,
+//           timeStart: "12:00",
+//           timeEnd: "13:50",
+//           room: "C6-401",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "IM1023",
-      courseName: "Production Management for Engineers",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [35, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 3,
-          timeStart: "07:00",
-          timeEnd: "08:50",
-          room: "B6-306",
-        },
-      ],
-    },
+//     {
+//       courseCode: "IM1023",
+//       courseName: "Production Management for Engineers",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [35, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 3,
+//           timeStart: "07:00",
+//           timeEnd: "08:50",
+//           room: "B6-306",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3027",
-      courseName: "E-Commerce",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 4,
-          timeStart: "12:00",
-          timeEnd: "13:50",
-          room: "B1-203",
-        },
-      ],
-    },
+//     {
+//       courseCode: "CO3027",
+//       courseName: "E-Commerce",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 4,
+//           timeStart: "12:00",
+//           timeEnd: "13:50",
+//           room: "B1-203",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3050",
-      courseName: "Web Programming Lab",
-      group: "CC01",
-      credit: 0,
-      sessions: [
-        {
-          weeks: [38, 41, 44, 47],
-          day: 5,
-          timeStart: "07:00",
-          timeEnd: "11:50",
-          room: "A4-511",
-        },
-      ],
-    },
+//     {
+//       courseCode: "CO3050",
+//       courseName: "Web Programming Lab",
+//       group: "CC01",
+//       credit: 0,
+//       sessions: [
+//         {
+//           weeks: [38, 41, 44, 47],
+//           day: 5,
+//           timeStart: "07:00",
+//           timeEnd: "11:50",
+//           room: "A4-511",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3015",
-      courseName: "Software Testing",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 5,
-          timeStart: "13:00",
-          timeEnd: "14:50",
-          room: "B4-504",
-        },
-      ],
-    },
+//     {
+//       courseCode: "CO3015",
+//       courseName: "Software Testing",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 5,
+//           timeStart: "13:00",
+//           timeEnd: "14:50",
+//           room: "B4-504",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3011",
-      courseName: "Software Project Management",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 6,
-          timeStart: "09:00",
-          timeEnd: "10:50",
-          room: "C6-402",
-        },
-      ],
-    },
+//     {
+//       courseCode: "CO3011",
+//       courseName: "Software Project Management",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 6,
+//           timeStart: "09:00",
+//           timeEnd: "10:50",
+//           room: "C6-402",
+//         },
+//       ],
+//     },
 
-    {
-      courseCode: "CO3065",
-      courseName: "Advanced Software Engineering",
-      group: "CC01",
-      credit: 3,
-      sessions: [
-        {
-          weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
-          day: 6,
-          timeStart: "14:00",
-          timeEnd: "15:50",
-          room: "B4-403",
-        },
-      ],
-    },
-  ];
+//     {
+//       courseCode: "CO3065",
+//       courseName: "Advanced Software Engineering",
+//       group: "CC01",
+//       credit: 3,
+//       sessions: [
+//         {
+//           weeks: [35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50],
+//           day: 6,
+//           timeStart: "14:00",
+//           timeEnd: "15:50",
+//           room: "B4-403",
+//         },
+//       ],
+//     },
+//   ];
+// }
+
+async function fetchStudentSchedule(): Promise<Course[]> {
+  const res = await fetch("http://localhost:5000/api/schedules");
+
+  if (!res.ok) {
+    throw new Error("Failed to load schedule");
+  }
+
+  return await res.json();
 }
-
 
 export default function CalendarCheckPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -225,7 +234,7 @@ export default function CalendarCheckPage() {
     setLoading(true);
     setError(null);
     try {
-      const json = await mockFetchStudentSchedule();
+      const json = await fetchStudentSchedule();
       setCourses(json);
     } catch (err) {
       console.error(err);
