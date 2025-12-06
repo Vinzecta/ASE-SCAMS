@@ -197,7 +197,13 @@ function minutesFromHHMM(t: string) {
 // }
 
 async function fetchStudentSchedule(): Promise<Course[]> {
-  const res = await fetch("http://localhost:5000/api/schedules");
+  const token = localStorage.getItem("accessToken");
+
+  const res = await fetch("http://localhost:3000/api/schedules", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
 
   if (!res.ok) {
     throw new Error("Failed to load schedule");
@@ -205,6 +211,7 @@ async function fetchStudentSchedule(): Promise<Course[]> {
 
   return await res.json();
 }
+
 
 export default function CalendarCheckPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -313,8 +320,35 @@ export default function CalendarCheckPage() {
     d.setDate(d.getDate() + 7);
     setWeekStartIso(d.toISOString().slice(0, 10));
   }
+    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      function handleLogout() {
+        localStorage.removeItem("user");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/log-in";
+      }
 
   return (
+    <>
+    <div className="w-full bg-blue-600 text-white px-6 py-3 flex justify-between items-center shadow">
+        <h1 className="text-lg font-semibold">Student Dashboard</h1>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="font-semibold">{savedUser?.name || "Unknown User"}</p>
+            <p className="text-sm opacity-80 capitalize">{savedUser?.role || ""}</p>
+
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 bg-white text-blue-600 rounded hover:bg-gray-200"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
     <div className="p-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between gap-4">
@@ -589,5 +623,6 @@ export default function CalendarCheckPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
