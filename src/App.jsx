@@ -4,13 +4,14 @@ import Login from "./features/Authentication/Login";
 import SignUp from "./features/Authentication/SignUp";
 import ForgotPassword from "./features/Authentication/ResetPassword";
 import CalendarCheckPage from "../src/features/CalendarCheck/CalendarCheckPage";
+import Dashboard from "./features/Dashboard/Dashboard";
 import "./App.css";
 
-const Dashboard = () => (
-    <div>
-        <h1>Home Page</h1>
-    </div>
-);
+// const Dashboard = () => (
+//     <div>
+//         <h1>Home Page</h1>
+//     </div>
+// );
 
 function App() {
     return (
@@ -21,7 +22,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/book-room" element={<RoomBooking />} />
             <Route path="/calendar-check" element={<CalendarCheckPage />} />
-
         </Routes>
         
     );
