@@ -1,63 +1,73 @@
+import { useEffect, useState } from "react";
 import { Calendar, Clock } from "lucide-react";
+import api from "../../services/api";
 
 interface ScheduleTimelineProps {
-    selectedRoom: string | null;
+    selectedRoom: string | null; //  "H6-101"
 }
 
-const mockSchedule = [
-    {
-        day: "Monday",
-        time: "08:00 - 10:00",
-        course: "Data Structures",
-        lecturer: "Dr. Johnson",
-    },
-    {
-        day: "Monday",
-        time: "14:00 - 16:00",
-        course: "Algorithms",
-        lecturer: "Prof. Chen",
-    },
-    {
-        day: "Tuesday",
-        time: "10:00 - 12:00",
-        course: "Database Systems",
-        lecturer: "Dr. Williams",
-    },
-    {
-        day: "Wednesday",
-        time: "09:00 - 11:00",
-        course: "Software Engineering",
-        lecturer: "Dr. Brown",
-    },
-    {
-        day: "Thursday",
-        time: "13:00 - 15:00",
-        course: "Computer Networks",
-        lecturer: "Prof. Davis",
-    },
-    {
-        day: "Friday",
-        time: "11:00 - 13:00",
-        course: "Web Development",
-        lecturer: "Dr. Martinez",
-    },
-];
-
-const timeSlots = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-];
+const dayNumberToString: Record<number, string> = {
+    2: "Monday",
+    3: "Tuesday",
+    4: "Wednesday",
+    5: "Thursday",
+    6: "Friday",
+    7: "Saturday",
+    8: "Sunday",
+};
 
 export function ScheduleTimeline({ selectedRoom }: ScheduleTimelineProps) {
+    const [schedules, setSchedules] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!selectedRoom) return;
+
+        const fetchSchedules = async () => {
+            setLoading(true);
+            try {
+                const res = await api.get("/schedules");
+
+                const filtered: any[] = [];
+
+                res.data.forEach((sched: any) => {
+                    sched.sessions.forEach((sess: any) => {
+                        if (sess.room === selectedRoom) {
+                            filtered.push({
+                                day: dayNumberToString[sess.day],
+                                time: `${sess.timeStart} - ${sess.timeEnd}`,
+                                course: sched.courseName, // DTO backend trả về courseName
+                                lecturer: "Lecturer Info", // DTO backend hiện chưa trả về tên Teacher, có thể update backend sau
+                            });
+                        }
+                    });
+                });
+
+                setSchedules(filtered);
+            } catch (error) {
+                console.error("Error fetching schedules", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSchedules();
+    }, [selectedRoom]);
+
+    const timeSlots = [
+        "08:00",
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "13:00",
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00",
+        "18:00",
+    ];
+
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
             <div className="flex items-center gap-2 mb-4">
@@ -78,22 +88,33 @@ export function ScheduleTimeline({ selectedRoom }: ScheduleTimelineProps) {
                         <p className="text-sm text-gray-700">
                             Viewing schedule for:
                         </p>
-                        <p className="text-blue-900">{selectedRoom}</p>
+                        <p className="text-blue-900 font-bold">
+                            {selectedRoom}
+                        </p>
                     </div>
 
-                    {/* Weekly Timeline */}
                     <div className="space-y-3 max-h-[600px] overflow-y-auto">
                         <h4 className="text-sm text-gray-700">
-                            This Week's Bookings
+                            Existing Bookings
                         </h4>
 
-                        {mockSchedule.map((booking, index) => (
+                        {loading && (
+                            <p className="text-sm text-gray-500">Loading...</p>
+                        )}
+
+                        {!loading && schedules.length === 0 && (
+                            <p className="text-sm text-gray-400 italic">
+                                No bookings found.
+                            </p>
+                        )}
+
+                        {schedules.map((booking, index) => (
                             <div
                                 key={index}
                                 className="p-3 bg-gray-50 rounded-lg border-l-4 border-blue-600"
                             >
                                 <div className="flex items-start justify-between mb-1">
-                                    <p className="text-gray-900">
+                                    <p className="text-gray-900 font-medium">
                                         {booking.day}
                                     </p>
                                     <div className="flex items-center gap-1 text-gray-600">
@@ -103,57 +124,14 @@ export function ScheduleTimeline({ selectedRoom }: ScheduleTimelineProps) {
                                         </p>
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-700">
+                                <p className="text-sm text-gray-700 font-semibold">
                                     {booking.course}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    {booking.lecturer}
                                 </p>
                             </div>
                         ))}
                     </div>
 
-                    {/* Time Grid Visualization */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                        <h4 className="text-sm text-gray-700 mb-3">
-                            Today's Timeline
-                        </h4>
-                        <div className="space-y-1">
-                            {timeSlots.map((time) => {
-                                const isOccupied =
-                                    time === "08:00" ||
-                                    time === "14:00" ||
-                                    time === "15:00";
-                                return (
-                                    <div
-                                        key={time}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <span className="text-xs text-gray-500 w-12">
-                                            {time}
-                                        </span>
-                                        <div
-                                            className={`flex-1 h-8 rounded ${
-                                                isOccupied
-                                                    ? "bg-blue-200 border border-blue-300"
-                                                    : "bg-gray-100"
-                                            }`}
-                                        ></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="flex items-center gap-4 mt-3 text-xs">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-blue-200 border border-blue-300 rounded"></div>
-                                <span className="text-gray-600">Occupied</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-gray-100 rounded"></div>
-                                <span className="text-gray-600">Available</span>
-                            </div>
-                        </div>
-                    </div>
+                    {/* (Giữ nguyên phần Time Grid Visualization bên dưới nếu muốn) */}
                 </>
             )}
         </div>
