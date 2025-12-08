@@ -10,9 +10,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: DoorOpen, label: "Book a room", path: "/schedule" },
-    { icon: DoorOpen, label: "Book a Room", path: "/schedule" },
-    { icon: DoorOpen, label: "Book a room", path: "/schedule" },
-    { icon: DoorOpen, label: "Book a room", path: "/schedule" },
 ];
 
 export function Sidebar() {
