@@ -1,6 +1,6 @@
 import "../../assets/style/Fonts.css"
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ErrorMessage } from "../../components/message/ErrorMessage";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +10,23 @@ export default function Login() {
     const [error, setError] = useState({email: "", password: ""});
     const [serverError, setServerError] = useState("");
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const authorization = () => {
+            const userString = localStorage.getItem("user");
+            if ( !userString ) {
+                return;
+            }
+
+            const user = JSON.parse(userString);
+            if (user.role === "student") {
+                navigate("/calendar-check");
+            } else if (user.role === "lecturer") {
+                navigate("/book-room");
+            }
+        }
+        authorization();
+    }, []);
     
     async function loginValidation(e: React.FormEvent) {
         e.preventDefault();
@@ -39,17 +56,22 @@ export default function Login() {
                 });
 
                 const data = await res.json();
-                console.log(data.user);
 
                 if (!res.ok) {
                     setServerError(data.message);
                     return;
                 }
+                console.log(data.accessToken);
 
                 setServerError("");
-                localStorage.setItem("token", data.accessToken);
-                localStorage.setItem("user", data.user)
-                navigate("/");
+                localStorage.setItem("accessToken", data.accessToken);
+                localStorage.setItem("refreshToken", data.refreshToken);
+                localStorage.setItem("user", JSON.stringify(data.user))
+                if (data.user.role === 'student') {
+                    navigate("/calendar-check")
+                } else if (data.user.role === 'lecturer') {
+                    navigate("/book-room");
+                }
             } catch (err) {
                 const messageError = err as Error;
                 alert("Error" + messageError.message);

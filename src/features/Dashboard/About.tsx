@@ -1,4 +1,5 @@
 import { Check, Target, Users, Lightbulb, Shield, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function About() {
     const missions = [
@@ -101,9 +102,9 @@ export default function About() {
                                 ))}
                             </div>
 
-                            <button className="mt-8 bg-[#4474F8] text-white px-8 py-4 rounded-full font-semibold hover:bg-[#3461E6] hover:scale-105 hover:shadow-lg transition-all duration-300">
+                            <Link to={"/log-in"} className="mt-8 bg-[#4474F8] text-white px-8 py-4 rounded-full font-semibold hover:bg-[#3461E6] hover:scale-105 hover:shadow-lg transition-all duration-300">
                                 Learn More About Our Technology
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
