@@ -1,5 +1,8 @@
 import express from 'express';
 import { createRoom, getRooms } from '../controllers/RoomController.js';
+import { verifyToken } from '../middlewares/auth.js';
+import { allowRoles } from '../middlewares/role.js';
+
 
 const router = express.Router();
 
