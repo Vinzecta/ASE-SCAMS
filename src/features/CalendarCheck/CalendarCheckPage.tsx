@@ -53,10 +53,10 @@ const START_HOUR = 5;
 const END_HOUR = 23;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 function getAcademicWeekNumber(date: Date) {
-  const start = new Date(date.getFullYear(), 0, 1); // Jan 1
+  const start = new Date(date.getFullYear(), 0, 1);
   const diff = date.getTime() - start.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return Math.floor(days / 7) + 1; // week 1 starts at Jan 1
+  return Math.floor(days / 7) + 1; 
 }
 
 function minutesFromHHMM(t: string) {
@@ -290,18 +290,41 @@ export default function CalendarCheckPage() {
       setLoading(false);
     }
   }
+  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return courses;
-    return courses.filter(
-      (c) =>
-        c.courseCode.toLowerCase().includes(q) ||
-        c.courseName.toLowerCase().includes(q) ||
-        (c.group ?? "").toLowerCase().includes(q) ||
-        c.sessions.some((s) => (s.room ?? "").toLowerCase().includes(q) || String(s.weeks).includes(q))
-    );
-  }, [courses, search]);
+      const filtered = useMemo(() => {
+      const q = search.trim().toLowerCase();
+
+      let result = courses;
+
+      if (savedUser.role === "lecturer") {
+        result = result.filter(
+          (c: any) => c.teacherId === savedUser.id 
+        );
+      }
+
+      if (savedUser.role === "student") {
+        result = result.filter(
+          (c: any) => c.studentIds?.includes?.(savedUser.id) 
+        );
+      }
+
+      if (q) {
+        result = result.filter(
+          (c) =>
+            c.courseCode.toLowerCase().includes(q) ||
+            c.courseName.toLowerCase().includes(q) ||
+            (c.group ?? "").toLowerCase().includes(q) ||
+            c.sessions.some(
+              (s) =>
+                (s.room ?? "").toLowerCase().includes(q) ||
+                String(s.weeks).includes(q)
+            )
+        );
+      }
+
+      return result;
+    }, [courses, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
@@ -360,7 +383,6 @@ export default function CalendarCheckPage() {
     d.setDate(d.getDate() + 7);
     setWeekStartIso(d.toISOString().slice(0, 10));
   }
-    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
       function handleLogout() {
         localStorage.removeItem("user");
@@ -619,7 +641,7 @@ export default function CalendarCheckPage() {
                       {sessionsThisWeek
                         .filter(
                             (s) =>
-                            s.weeks.includes(getAcademicWeekNumber(weekStartDate)) && // filter by academic week
+                            s.weeks.includes(getAcademicWeekNumber(weekStartDate)) && 
                             (s.day ?? 1) - 1 === dayIdx
                         )
                         .map((s, idx) => {
