@@ -3,7 +3,7 @@ import { createSchedule, getSchedules } from '../controllers/ScheduleController.
 
 const router = express.Router();
 
-router.post('/', createSchedule);
-router.get('/', getSchedules);
+router.post('/', verifyToken,allowRoles('admin', 'lecturer'), createSchedule);
+router.get('/', verifyToken,allowRoles('admin', 'lecturer'), getSchedules);
 
 export default router;

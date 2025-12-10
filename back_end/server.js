@@ -21,8 +21,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR HANDLER:", err && (err.stack || err));
-  const message = err?.message || String(err || "Unknown error");
+  console.error('GLOBAL ERROR HANDLER:', err && (err.stack || err));
+  const message = err?.message || String(err || 'Unknown error');
   res.status(err?.statusCode || 500).json({ message });
 });
 
@@ -31,8 +31,8 @@ app.use(cors());
 app.use(helmet());
 
 // Mount Routes
-app.use("/api/auth", authRoutes);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api/auth', authRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/schedules', scheduleRoutes);
@@ -41,6 +41,9 @@ app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-app.listen(PORT,'0.0.0.0', () => {
+//Middleware
+app.use('/api/auth', authRoutes);
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
