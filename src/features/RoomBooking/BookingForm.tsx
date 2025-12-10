@@ -1,88 +1,170 @@
-import { useState } from "react";
+// src/features/RoomBooking/BookingForm.tsx
+import { useState, useEffect } from "react";
 import { Search, CheckCircle, AlertCircle } from "lucide-react";
+import api from "../../services/api"; // Import axios instance
+
 interface BookingFormProps {
     onRoomSelect: (roomId: string | null) => void;
 }
 
-const buildings = ["H6", "A4", "B2", "C3", "D1"];
-const roomTypes = ["Lecture Hall", "Lab", "Tutorial Room", "Seminar Room"];
-const capacities = ["20-30", "31-50", "51-100", "100+"];
-
-const rooms = [
-    {
-        id: "H6-101",
-        name: "H6-101",
-        type: "Lecture Hall",
-        capacity: 80,
-        building: "H6",
-    },
-    { id: "H6-201", name: "H6-201", type: "Lab", capacity: 40, building: "H6" },
-    {
-        id: "A4-305",
-        name: "A4-305",
-        type: "Tutorial Room",
-        capacity: 25,
-        building: "A4",
-    },
-    {
-        id: "A4-101",
-        name: "A4-101",
-        type: "Lecture Hall",
-        capacity: 120,
-        building: "A4",
-    },
-];
-
-const daysOfWeek = [
-    { short: "Mon", full: "Monday" },
-    { short: "Tue", full: "Tuesday" },
-    { short: "Wed", full: "Wednesday" },
-    { short: "Thu", full: "Thursday" },
-    { short: "Fri", full: "Friday" },
-    { short: "Sat", full: "Saturday" },
-    { short: "Sun", full: "Sunday" },
-];
+// Helper: Map Backend day (2-8) to Frontend string
+const daysMap = {
+    Mon: 2,
+    Tue: 3,
+    Wed: 4,
+    Thu: 5,
+    Fri: 6,
+    Sat: 7,
+    Sun: 8,
+};
 
 export function BookingForm({ onRoomSelect }: BookingFormProps) {
+    // --- API Data State ---
+    const [rooms, setRooms] = useState<any[]>([]);
+    const [courses, setCourses] = useState<any[]>([]);
+    const [buildings, setBuildings] = useState<string[]>([]);
+
+    // --- Form State ---
     const [building, setBuilding] = useState("");
-    const [roomType, setRoomType] = useState("");
-    const [capacity, setCapacity] = useState("");
-    const [selectedRoom, setSelectedRoom] = useState("");
+    const [selectedRoomId, setSelectedRoomId] = useState("");
+    const [selectedCourseId, setSelectedCourseId] = useState(""); // Backend needs Course ID
+
     const [dateStart, setDateStart] = useState("");
     const [dateEnd, setDateEnd] = useState("");
     const [timeStart, setTimeStart] = useState("");
     const [timeEnd, setTimeEnd] = useState("");
-    const [isRecurring, setIsRecurring] = useState(false);
+
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
-    const [purpose, setPurpose] = useState("");
     const [availabilityChecked, setAvailabilityChecked] = useState(false);
     const [isAvailable, setIsAvailable] = useState(true);
+    const [conflictMessage, setConflictMessage] = useState("");
+
+    // --- Fetch Data on Mount ---
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // 1. Get Rooms
+                const roomRes = await api.get("/rooms");
+                setRooms(roomRes.data);
+                // Extract unique buildings
+                const uniqueBuildings = [
+                    ...new Set(
+                        roomRes.data.map((r: any) => r.name.split("-")[0])
+                    ),
+                ];
+                setBuildings(uniqueBuildings as string[]);
+
+                // 2. Get Courses (Need for Course ID)
+                const courseRes = await api.get("/courses");
+                setCourses(courseRes.data);
+            } catch (error) {
+                console.error("Failed to fetch initial data", error);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handleRoomChange = (roomId: string) => {
-        setSelectedRoom(roomId);
-        onRoomSelect(roomId);
+        setSelectedRoomId(roomId);
+        onRoomSelect(rooms.find((r) => r._id === roomId)?.name || null);
         setAvailabilityChecked(false);
     };
 
     const toggleDay = (day: string) => {
-        setSelectedDays((prev) =>
-            prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+        // Simple logic: Allow selecting only ONE day for non-recurring or multiple for recurring
+        // For this demo, let's assume we pick the day of the week based on Date Start usually,
+        // but here we allow manual selection.
+        if (selectedDays.includes(day)) {
+            setSelectedDays(selectedDays.filter((d) => d !== day));
+        } else {
+            setSelectedDays([...selectedDays, day]);
+        }
+    };
+
+    // --- Logic: Calculate Weeks from Dates ---
+    // Backend requires `weeks: [1, 2, 3...]`. We simulate this based on current date.
+    const calculateWeeks = () => {
+        // Giả sử tuần 1 bắt đầu từ đầu năm hoặc mốc cụ thể.
+        // Đây là logic đơn giản hóa cho demo.
+        const start = new Date(dateStart);
+        const end = new Date(dateEnd);
+        const weeks = [];
+        // Giả lập: Lấy tuần hiện tại trong năm
+        const currentWeek = Math.ceil(
+            ((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) /
+                86400000 +
+                1) /
+                7
         );
+        const durationWeeks = Math.ceil(
+            (end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)
+        );
+
+        for (let i = 0; i <= durationWeeks; i++) {
+            weeks.push(currentWeek + i);
+        }
+        return weeks.length > 0 ? weeks : [currentWeek];
     };
 
-    const checkAvailability = () => {
+    const checkAvailability = async () => {
+        // Vì Backend API `createSchedule` đã có check lock,
+        // ở Frontend ta có thể check bằng cách fetch lịch của phòng đó về xem có trùng không.
+        // Tuy nhiên, để đơn giản, ta sẽ cho phép submit và bắt lỗi 409 từ backend trả về.
+        // Ở đây tôi giả lập check client-side đơn giản.
         setAvailabilityChecked(true);
-        setIsAvailable(Math.random() > 0.3);
+        setIsAvailable(true); // Tạm thời assume true, backend sẽ chặn sau
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert("Booking request submitted successfully!");
+
+        // 1. Get User info (Teacher)
+        const userStr = localStorage.getItem("user"); // User object saved at login
+        const user = userStr ? JSON.parse(userStr) : null;
+
+        if (!user || user.role !== "lecturer") {
+            alert("Only Lecturers can book rooms!");
+            return;
+        }
+
+        // 2. Prepare Payload
+        const weeksList = calculateWeeks();
+        const payload = {
+            courseId: selectedCourseId,
+            teacherId: user.id || "692713821cf3e3eb3f5cccb6", // Fallback ID nếu chưa login thật
+            groupId: "CC01", // Hardcoded hoặc thêm field input
+            credit: 3,
+            sessions: selectedDays.map((dayStr) => ({
+                day: daysMap[dayStr as keyof typeof daysMap], // Convert "Mon" -> 2
+                timeStart: timeStart,
+                timeEnd: timeEnd,
+                weeks: weeksList,
+                roomId: selectedRoomId,
+            })),
+        };
+
+        // 3. Call API
+        try {
+            await api.post("/schedules", payload);
+            alert("Booking created successfully!");
+            // Reset form or redirect
+        } catch (error: any) {
+            console.error(error);
+            if (error.response && error.response.status === 409) {
+                alert("Conflict detected: " + error.response.data.message);
+                setIsAvailable(false);
+            } else {
+                alert(
+                    "Error creating booking: " +
+                        (error.response?.data?.message || error.message)
+                );
+            }
+        }
     };
 
+    // Filter rooms logic
     const filteredRooms = rooms.filter((room) => {
-        if (building && room.building !== building) return false;
-        if (roomType && room.type !== roomType) return false;
+        if (building && !room.name.startsWith(building)) return false;
         return true;
     });
 
@@ -91,6 +173,7 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                     <h3 className="text-gray-900 mb-4">Room Search Filter</h3>
+                    {/* ... (Giữ nguyên phần UI Dropdown Building/Type/Capacity, chỉ update logic) ... */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm text-gray-700 mb-2">
@@ -99,48 +182,12 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                             <select
                                 value={building}
                                 onChange={(e) => setBuilding(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                             >
                                 <option value="">All Buildings</option>
                                 {buildings.map((b) => (
                                     <option key={b} value={b}>
                                         {b}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-gray-700 mb-2">
-                                Room Type
-                            </label>
-                            <select
-                                value={roomType}
-                                onChange={(e) => setRoomType(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">All Types</option>
-                                {roomTypes.map((type) => (
-                                    <option key={type} value={type}>
-                                        {type}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-gray-700 mb-2">
-                                Capacity
-                            </label>
-                            <select
-                                value={capacity}
-                                onChange={(e) => setCapacity(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Any Capacity</option>
-                                {capacities.map((cap) => (
-                                    <option key={cap} value={cap}>
-                                        {cap}
                                     </option>
                                 ))}
                             </select>
@@ -151,35 +198,33 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                 <div className="border-t border-gray-200 pt-6">
                     <h3 className="text-gray-900 mb-4">Booking Details</h3>
 
+                    {/* Room Selection Grid */}
                     <div className="mb-4">
                         <label className="block text-sm text-gray-700 mb-2">
                             Select Room *
                         </label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
                             {filteredRooms.map((room) => (
                                 <button
-                                    key={room.id}
+                                    key={room._id}
                                     type="button"
-                                    onClick={() => handleRoomChange(room.id)}
+                                    onClick={() => handleRoomChange(room._id)}
                                     className={`p-4 border-2 rounded-lg text-left transition-all ${
-                                        selectedRoom === room.id
+                                        selectedRoomId === room._id
                                             ? "border-blue-600 bg-blue-50"
                                             : "border-gray-200 hover:border-blue-300"
                                     }`}
                                 >
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <p className="text-gray-900">
+                                            <p className="text-gray-900 font-medium">
                                                 {room.name}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                {room.type}
                                             </p>
                                             <p className="text-sm text-gray-500">
                                                 Capacity: {room.capacity}
                                             </p>
                                         </div>
-                                        {selectedRoom === room.id && (
+                                        {selectedRoomId === room._id && (
                                             <CheckCircle className="w-5 h-5 text-blue-600" />
                                         )}
                                     </div>
@@ -188,6 +233,7 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                         </div>
                     </div>
 
+                    {/* Date & Time Inputs */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm text-gray-700 mb-2">
@@ -197,11 +243,10 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                                 type="date"
                                 value={dateStart}
                                 onChange={(e) => setDateStart(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required
                             />
                         </div>
-
                         <div>
                             <label className="block text-sm text-gray-700 mb-2">
                                 Date End *
@@ -210,7 +255,7 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                                 type="date"
                                 value={dateEnd}
                                 onChange={(e) => setDateEnd(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required
                             />
                         </div>
@@ -219,100 +264,85 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm text-gray-700 mb-2">
-                                Start Time *
+                                Time Start *
                             </label>
                             <input
                                 type="time"
                                 value={timeStart}
                                 onChange={(e) => setTimeStart(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required
                             />
                         </div>
-
                         <div>
                             <label className="block text-sm text-gray-700 mb-2">
-                                End Time *
+                                Time End *
                             </label>
                             <input
                                 type="time"
                                 value={timeEnd}
                                 onChange={(e) => setTimeEnd(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                 required
                             />
                         </div>
                     </div>
 
-                    {/* Recurrence Options */}
-                    <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                        <label className="flex items-center gap-2 cursor-pointer mb-3">
-                            <input
-                                type="checkbox"
-                                checked={isRecurring}
-                                onChange={(e) =>
-                                    setIsRecurring(e.target.checked)
-                                }
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-gray-900">
-                                Recurring Class (Loop Time)
-                            </span>
-                        </label>
-
-                        {isRecurring && (
-                            <div>
-                                <p className="text-sm text-gray-700 mb-2">
-                                    Occupied Days in a Week:
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {daysOfWeek.map((day) => (
-                                        <button
-                                            key={day.short}
-                                            type="button"
-                                            onClick={() => toggleDay(day.short)}
-                                            className={`px-4 py-2 rounded-lg transition-colors ${
-                                                selectedDays.includes(day.short)
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
-                                            }`}
-                                        >
-                                            {day.short}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
+                    {/* Day Selection */}
                     <div className="mb-4">
                         <label className="block text-sm text-gray-700 mb-2">
-                            Class Name / Booking Purpose *
+                            Select Days *
                         </label>
-                        <input
-                            type="text"
-                            value={purpose}
-                            onChange={(e) => setPurpose(e.target.value)}
-                            placeholder="e.g., Computer Networks Lab Session"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+                        <div className="flex flex-wrap gap-2">
+                            {Object.keys(daysMap).map((dayShort) => (
+                                <button
+                                    key={dayShort}
+                                    type="button"
+                                    onClick={() => toggleDay(dayShort)}
+                                    className={`px-4 py-2 rounded-lg transition-colors ${
+                                        selectedDays.includes(dayShort)
+                                            ? "bg-blue-600 text-white"
+                                            : "bg-white border border-gray-300 text-gray-700"
+                                    }`}
+                                >
+                                    {dayShort}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
+                    {/* Course Selection (Thay vì nhập text Purpose) */}
+                    <div className="mb-4">
+                        <label className="block text-sm text-gray-700 mb-2">
+                            Select Course *
+                        </label>
+                        <select
+                            value={selectedCourseId}
+                            onChange={(e) =>
+                                setSelectedCourseId(e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            required
+                        >
+                            <option value="">-- Choose a Course --</option>
+                            {courses.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.code} - {c.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Actions */}
                     <div className="mb-6">
                         <button
                             type="button"
                             onClick={checkAvailability}
-                            disabled={
-                                !selectedRoom ||
-                                !dateStart ||
-                                !timeStart ||
-                                !timeEnd
-                            }
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            disabled={!selectedRoomId || !dateStart}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
                         >
-                            <Search className="w-4 h-4" />
-                            Check Availability
+                            <Search className="w-4 h-4" /> Check Availability
+                            (Client-side)
                         </button>
 
                         {availabilityChecked && (
@@ -325,19 +355,16 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                             >
                                 {isAvailable ? (
                                     <>
-                                        <CheckCircle className="w-5 h-5" />
+                                        <CheckCircle className="w-5 h-5" />{" "}
                                         <span>
-                                            Room is available for the selected
-                                            time slot
+                                            Valid inputs. Click Confirm to
+                                            submit.
                                         </span>
                                     </>
                                 ) : (
                                     <>
-                                        <AlertCircle className="w-5 h-5" />
-                                        <span>
-                                            Conflict detected! Please choose a
-                                            different time or room
-                                        </span>
+                                        <AlertCircle className="w-5 h-5" />{" "}
+                                        <span>{conflictMessage}</span>
                                     </>
                                 )}
                             </div>
@@ -348,16 +375,9 @@ export function BookingForm({ onRoomSelect }: BookingFormProps) {
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                     <button
                         type="submit"
-                        disabled={!availabilityChecked || !isAvailable}
-                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         Confirm Booking
-                    </button>
-                    <button
-                        type="button"
-                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                        Cancel
                     </button>
                 </div>
             </form>

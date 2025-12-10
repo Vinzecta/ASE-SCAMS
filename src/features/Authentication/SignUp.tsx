@@ -14,6 +14,7 @@ export default function SignUp() {
     const [input, setInput] = useState({username: "", email: "", password: "", confirmPass: ""});
     const [errors, setErrors] = useState({username: "", email: "", password: "", confirmPass: ""});
     const [passwordValid, setPasswordValid] = useState({checkLength: false, checkSpecial: false});
+    const [serverError, setServerError] = useState("");
     const specialRegex = /^(?=.*[^A-Za-z0-9]).+$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const navigate = useNavigate();
@@ -36,10 +37,11 @@ export default function SignUp() {
         setPasswordValid(passwordValid);
     }, [input.password]);
 
-    function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
         const tempError = {username: "", email: "", password: "", confirmPass: ""}
+        const role = student ? "student" : "lecturer";
 
         if (input.username.trim().length === 0) {
             tempError.username = "This field is required!";
@@ -70,7 +72,26 @@ export default function SignUp() {
         setErrors(tempError)
 
         if (Object.values(tempError).every(value => value == "")) {
-            navigate("/");
+            try {
+                const res = await fetch("http://localhost:3000/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: input.username, email: input.email, password: input.password, role: role }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    setServerError(data.message);
+                    return;
+                }
+
+                setServerError("");
+                navigate("/log-in");
+            } catch (err) {
+                const messageError = err as Error;
+                alert("Error" + messageError.message);
+            }
         }
     }
 
@@ -116,6 +137,10 @@ export default function SignUp() {
 
             <form className="w-[30%] flex flex-col gap-5 bg-white !px-10 !py-5 rounded-2xl">
                 <h1 className="text-center font-bold text-3xl text-[#2c2c2c]">Sign Up</h1>
+                
+                {
+                    serverError ? <ErrorMessage error={serverError} /> : null
+                }
 
                 {/* Username */}
                 <div className="flex flex-col gap-1 text-sm">

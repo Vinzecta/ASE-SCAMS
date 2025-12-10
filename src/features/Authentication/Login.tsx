@@ -8,12 +8,14 @@ export default function Login() {
     const [show, setShow] = useState(false);
     const [input, setInput] = useState({email: "", password: ""});
     const [error, setError] = useState({email: "", password: ""});
+    const [serverError, setServerError] = useState("");
     const navigate = useNavigate();
     
-    function loginValidation(e: React.FormEvent) {
+    async function loginValidation(e: React.FormEvent) {
         e.preventDefault();
         const newError = {email: "", password: ""};
-        
+        console.log("Sending body:", { email: input.email, password: input.password });
+
         if(input.email.length === 0) {
             newError.email = "This field is required!"
         } else {
@@ -29,7 +31,29 @@ export default function Login() {
         setError(newError);
 
         if (Object.values(newError).every(value => value == "")) {
-            navigate("/");
+            try {
+                const res = await fetch("http://localhost:3000/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: input.email, password: input.password }),
+                });
+
+                const data = await res.json();
+                console.log(data.user);
+
+                if (!res.ok) {
+                    setServerError(data.message);
+                    return;
+                }
+
+                setServerError("");
+                localStorage.setItem("token", data.accessToken);
+                localStorage.setItem("user", data.user)
+                navigate("/");
+            } catch (err) {
+                const messageError = err as Error;
+                alert("Error" + messageError.message);
+            }
         }
     }
 
@@ -44,6 +68,10 @@ export default function Login() {
                     <h1 className="font-bold text-4xl text-[#2c2c2c] mb-2">Welcome Back</h1>
                     <p className="text-gray-500 text-sm">Login to your SCAMS account</p>
                 </div>
+
+                {
+                    serverError ? <ErrorMessage error={serverError} /> : null
+                }
 
                 <div className="flex flex-col gap-3 text-sm">
                     <div className="flex justify-between">
