@@ -6,6 +6,6 @@ import { allowRoles } from '../middlewares/role.js';
 const router = express.Router();
 
 router.post('/', verifyToken,allowRoles('admin', 'lecturer'), createSchedule);
-router.get('/', verifyToken,allowRoles('admin', 'lecturer'), getSchedules);
+router.get('/', verifyToken,allowRoles('admin', 'lecturer', 'student'), getSchedules);
 
 export default router;

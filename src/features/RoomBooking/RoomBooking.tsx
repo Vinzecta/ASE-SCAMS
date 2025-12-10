@@ -1,11 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookingForm } from "./BookingForm";
 import { ScheduleTimeline } from "./ScheduleTimeline";
 import { Header } from "../../components/layout/Header";
 import { Sidebar } from "../../components/common/Sidebar";
+import { useNavigate } from "react-router-dom";
+import { isTokenExpired } from "../../services/checkToken";
 
 export default function RoomBooking() {
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+    const navigate = useNavigate();
+    useEffect(() => {
+        const checkAuthorization = async () => {
+          const token = localStorage.getItem("accessToken");
+    
+          if (!token) {
+            navigate("/log-in");
+            return;
+          }
+    
+          if (isTokenExpired(token)) {
+            try {
+              const res = await fetch("http://localhost:3000/api/auth/refresh", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({refreshToken: localStorage.getItem("refreshToken")}),
+              })
+    
+              if (!res.ok) {
+                localStorage.removeItem("refreshToken");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("user");
+                navigate("/log-in");
+                return;
+              }
+    
+              const data = await res.json();
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("refreshToken", data.refreshToken);
+            } catch (err) {
+              navigate("log-in");
+            }
+          } else {
+            const userString = localStorage.getItem("user");
+            if ( !userString ) {
+                return;
+            }
+
+            const user = JSON.parse(userString);
+            if (user.role === "student") {
+                navigate("/calendar-check");
+            }
+          }
+        }
+    
+        checkAuthorization();
+      }, [navigate]);
 
     return (
         <div className="flex h-screen bg-gray-50">

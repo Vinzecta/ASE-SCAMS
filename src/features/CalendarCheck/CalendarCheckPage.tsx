@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { isTokenExpired } from "../../services/checkToken";
+import { useNavigate } from "react-router-dom";
 
 /**
  * CalendarCheckPage.tsx
@@ -198,10 +200,10 @@ function minutesFromHHMM(t: string) {
 
 async function fetchStudentSchedule(): Promise<Course[]> {
   const token = localStorage.getItem("accessToken");
-
+  console.log(token);
   const res = await fetch("http://localhost:3000/api/schedules", {
     headers: {
-      Authorization: `Bearer ${token}`
+      "Authorization": `Bearer ${token}`
     }
   });
 
@@ -222,6 +224,7 @@ export default function CalendarCheckPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const navigate = useNavigate();
   
 
   const [weekStartIso, setWeekStartIso] = useState(() => {
@@ -232,6 +235,43 @@ export default function CalendarCheckPage() {
     mon.setHours(0, 0, 0, 0);
     return mon.toISOString().slice(0, 10);
   });
+
+  useEffect(() => {
+    const checkAuthorization = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        navigate("/log-in");
+        return;
+      }
+
+      if (isTokenExpired(token)) {
+        try {
+          const res = await fetch("http://localhost:3000/api/auth/refresh", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({refreshToken: localStorage.getItem("refreshToken")}),
+          })
+
+          if (!res.ok) {
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("user");
+            navigate("/log-in");
+            return;
+          }
+
+          const data = await res.json();
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("refreshToken", data.refreshToken);
+        } catch (err) {
+          navigate("log-in");
+        }
+      }
+    }
+
+    checkAuthorization();
+  }, [navigate]);
 
   useEffect(() => {
     load();

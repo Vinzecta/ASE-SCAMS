@@ -32,10 +32,10 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'User not found' });
+    if (!user) return res.status(400).json({ message: 'Username or password is incorrect! Try again!' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Incorrect password' });
+    if (!isMatch) return res.status(400).json({ message: 'Username or password is incorrect! Try again!' });
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);

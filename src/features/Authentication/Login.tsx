@@ -8,12 +8,31 @@ export default function Login() {
     const [show, setShow] = useState(false);
     const [input, setInput] = useState({email: "", password: ""});
     const [error, setError] = useState({email: "", password: ""});
+    const [serverError, setServerError] = useState("");
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const authorization = () => {
+            const userString = localStorage.getItem("user");
+            if ( !userString ) {
+                return;
+            }
+
+            const user = JSON.parse(userString);
+            if (user.role === "student") {
+                navigate("/calendar-check");
+            } else if (user.role === "lecturer") {
+                navigate("/book-room");
+            }
+        }
+        authorization();
+    }, []);
     
-    function loginValidation(e: React.FormEvent) {
+    async function loginValidation(e: React.FormEvent) {
         e.preventDefault();
         const newError = {email: "", password: ""};
-        
+        console.log("Sending body:", { email: input.email, password: input.password });
+
         if(input.email.length === 0) {
             newError.email = "This field is required!"
         } else {
@@ -29,7 +48,34 @@ export default function Login() {
         setError(newError);
 
         if (Object.values(newError).every(value => value == "")) {
-            navigate("/");
+            try {
+                const res = await fetch("http://localhost:3000/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: input.email, password: input.password }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    setServerError(data.message);
+                    return;
+                }
+                console.log(data.accessToken);
+
+                setServerError("");
+                localStorage.setItem("accessToken", data.accessToken);
+                localStorage.setItem("refreshToken", data.refreshToken);
+                localStorage.setItem("user", JSON.stringify(data.user))
+                if (data.user.role === 'student') {
+                    navigate("/calendar-check")
+                } else if (data.user.role === 'lecturer') {
+                    navigate("/book-room");
+                }
+            } catch (err) {
+                const messageError = err as Error;
+                alert("Error" + messageError.message);
+            }
         }
     }
 
@@ -38,38 +84,79 @@ export default function Login() {
     }
 
     return (
-        <section className="montserrat-custom h-full w-full flex items-center justify-center  bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
-            <form className="w-[30%] flex flex-col gap-10 bg-white !p-10 rounded-2xl">
-                <h1 className="text-center font-bold text-3xl text-[#2c2c2c]">Login</h1>
+        <section className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#4474F8] via-[#5984F9] to-[#6B94FA]">
+            <form className="w-[90%] md:w-[500px] flex flex-col gap-8 bg-white p-10 rounded-2xl shadow-2xl">
+                <div className="text-center">
+                    <h1 className="font-bold text-4xl text-[#2c2c2c] mb-2">Welcome Back</h1>
+                    <p className="text-gray-500 text-sm">Login to your SCAMS account</p>
+                </div>
+
+                {
+                    serverError ? <ErrorMessage error={serverError} /> : null
+                }
+
                 <div className="flex flex-col gap-3 text-sm">
                     <div className="flex justify-between">
-                        <label className="font-light !my-auto">Email</label>
-                        {
-                            error.email ? <ErrorMessage error={error.email} /> : null
-                        }
+                        <label className="font-semibold text-gray-700">Email</label>
+                        {error.email && <ErrorMessage error={error.email} />}
                     </div>
-                    <input onChange={(e) => setInput(prev => ({...prev, email: e.target.value}))} className="w-full border-b !px-2 !py-3" placeholder="Type your email" />
+                    <input 
+                        onChange={(e) => setInput(prev => ({...prev, email: e.target.value}))} 
+                        type="email"
+                        className="w-full border-2 border-gray-200 px-4 py-3 rounded-lg focus:border-[#4474F8] focus:outline-none transition-colors" 
+                        placeholder="your.email@example.com" 
+                    />
                 </div>
 
                 <div className="flex flex-col gap-3 text-sm">
                     <div className="flex justify-between">
-                        <label className="font-light !my-auto">Password</label>
-                        {
-                            error.password ? <ErrorMessage error={error.password} /> : null
-                        }
+                        <label className="font-semibold text-gray-700">Password</label>
+                        {error.password && <ErrorMessage error={error.password} />}
                     </div>
-                    <input onChange={(e) => setInput(prev => ({...prev, password: e.target.value}))} type={show ? "text" : "password"} className="w-full border-b !px-2 !py-3" placeholder="Type your password" />
+                    <input 
+                        onChange={(e) => setInput(prev => ({...prev, password: e.target.value}))} 
+                        type={show ? "text" : "password"} 
+                        className="w-full border-2 border-gray-200 px-4 py-3 rounded-lg focus:border-[#4474F8] focus:outline-none transition-colors" 
+                        placeholder="Enter your password" 
+                    />
 
-                    <div className="flex gap-2">
-                        <input onClick={showPassword} type="checkbox" />
-                        <p className="font-light text-xs">Show password</p>
+                    <div className="flex justify-between items-center">
+                        <div className="flex gap-2 items-center">
+                            <input 
+                                onChange={showPassword} 
+                                type="checkbox" 
+                                id="showPassword"
+                                className="w-4 h-4 accent-[#4474F8] cursor-pointer"
+                            />
+                            <label htmlFor="showPassword" className="text-sm text-gray-600 cursor-pointer">
+                                Show password
+                            </label>
+                        </div>
+                        <Link 
+                            to="/forgot-password" 
+                            className="text-sm text-[#4474F8] hover:text-[#3461E6] hover:underline transition-colors"
+                        >
+                            Forgot password?
+                        </Link>
                     </div>
-                    <Link to={"/forgot-password"} className="font-light text-xs !ml-auto hover:underline cursor-pointer">Forgot password?</Link>
                 </div>
 
-                <button onClick={loginValidation} className="!py-3 rounded-2xl font-bold text-base text-white bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 hover:[background:linear-gradient(to_right,#76a9fa,#b28dff,#ff7ac6)]">Login</button>
+                <button 
+                    onClick={loginValidation} 
+                    className="py-4 rounded-lg font-bold text-base text-white bg-[#4474F8] hover:bg-[#3461E6] hover:scale-[1.02] hover:shadow-lg transition-all duration-300"
+                >
+                    Login
+                </button>
 
-                <p className="text-xs text-center">Don't have an account? Sign up <span className="text-[#ec4899] hover:underline hover:text-[#db2777] cursor-pointer"><Link to={"/sign-up"}>here</Link></span></p>
+                <p className="text-sm text-center text-gray-600">
+                    Don't have an account?{" "}
+                    <Link 
+                        to="/sign-up" 
+                        className="text-[#4474F8] font-semibold hover:text-[#3461E6] hover:underline transition-colors"
+                    >
+                        Sign up here
+                    </Link>
+                </p>
             </form>
         </section>
     );
