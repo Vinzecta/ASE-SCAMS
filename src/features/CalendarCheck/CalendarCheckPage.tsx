@@ -49,8 +49,12 @@ type Course = {
   sessions: Session[];
 };
 
-const START_HOUR = 5;
-const END_HOUR = 23;
+const START_HOUR = 7;
+const END_HOUR = 22;
+const HOUR_HEIGHT = 40; 
+const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
+const GRID_TOP_OFFSET = 0; 
+
 const HOURS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 function getAcademicWeekNumber(date: Date) {
   const start = new Date(date.getFullYear(), 0, 1);
@@ -320,12 +324,19 @@ export default function CalendarCheckPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+function getMonday(date: Date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-  function isoToDate(iso: string) {
-    const d = new Date(iso + 'T00:00:00');
-    return d;
-  }
-  const weekStartDate = isoToDate(weekStartIso);
+
+  const weekStartDate = new Date(weekStartIso);
+
+
   const currentWeek = getAcademicWeekNumber(weekStartDate);
 
   const weekDates = useMemo(() => {
@@ -334,12 +345,18 @@ export default function CalendarCheckPage() {
       d.setDate(d.getDate() + i);
       return d;
     });
-  }, [weekStartIso]);
+  }, [weekStartDate]);
 
   const sessionsThisWeek = useMemo(() => {
-    const out: (Session & { courseCode: string; courseName: string; group?: string })[] = [];
-    for (const c of courses) {
-      for (const s of c.sessions) {
+  const out: (Session & {
+    courseCode: string;
+    courseName: string;
+    group?: string;
+  })[] = [];
+
+  for (const c of courses) {
+    for (const s of c.sessions) {
+      if (s.weeks.includes(currentWeek)) {
         out.push({
           ...s,
           courseCode: c.courseCode,
@@ -348,23 +365,14 @@ export default function CalendarCheckPage() {
         });
       }
     }
-    return out;
-  }, [courses]);
-
-  function sessionGridStyle(s: Session) {
-    const startM = minutesFromHHMM(s.timeStart);
-    const endM = minutesFromHHMM(s.timeEnd);
-    const dayIndex = (s.day ?? 1) - 1;
-    const topMin = Math.max(0, startM - START_HOUR * 60);
-    const heightMin = Math.max(30, endM - startM);
-    return {
-      dayIndex,
-      topMin,
-      heightMin,
-      startM,
-      endM,
-    };
   }
+
+  return out;
+}, [courses, currentWeek]);
+
+
+  
+
 
   function goPrevWeek() {
     const d = new Date(weekStartDate);
@@ -452,13 +460,17 @@ export default function CalendarCheckPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <input
+             <input
                 type="date"
                 value={weekStartIso}
-                onChange={(e) => setWeekStartIso(e.target.value)}
+                onChange={(e) => {
+                  const picked = new Date(e.target.value);
+                  setWeekStartIso(getMonday(picked).toISOString().slice(0, 10));
+                }}
                 className="border px-2 py-1 rounded"
                 aria-label="Select week start (Monday)"
               />
+
 
               <button onClick={goNextWeek} className="p-2 rounded hover:bg-gray-100">
                 <ChevronRight className="w-4 h-4" />
@@ -528,8 +540,11 @@ export default function CalendarCheckPage() {
                   )}
 
                   {pageItems.map((c) => (
-                    <React.Fragment key={c.courseCode + (c.group ?? '')}>
-                      {c.sessions.map((s, i) => (
+                      <React.Fragment key={c.courseCode + (c.group ?? '')}>
+                        {c.sessions
+                          .filter((s) => s.weeks.includes(currentWeek))
+                          .map((s, i) => (
+
                         <tr key={c.courseCode + '-' + i}>
                           <td className="px-3 py-3">{c.courseCode}</td>
                           <td className="px-3 py-3">{c.courseName}</td>
@@ -591,13 +606,18 @@ export default function CalendarCheckPage() {
             <div className="flex gap-4 items-start">
               <div className="w-16 flex-shrink-0">
                 <div className="h-10"></div>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col">
                   {HOURS.map((h) => (
-                    <div key={h} className="text-xs text-gray-500 h-10 flex items-start">
+                    <div
+                      key={h}
+                      className="text-xs text-gray-500 flex items-start"
+                      style={{ height: HOUR_HEIGHT }}
+                    >
                       {String(h).padStart(2, '0')}:00
                     </div>
                   ))}
                 </div>
+
               </div>
 
               <div className="flex-1 overflow-auto">
@@ -631,29 +651,47 @@ export default function CalendarCheckPage() {
                         </div>
                       </div>
 
-                      <div className="relative z-10 p-1">
+                      <div className="relative z-10">
                         {sessionsThisWeek
-                          .filter(
-                            (s) =>
-                              s.weeks.includes(getAcademicWeekNumber(weekStartDate)) &&
-                              (s.day ?? 1) - 1 === dayIdx
-                          )
+                         .filter((s) => {
+                          // Backend: 2=Mon ... 8=Sun
+                          // Calendar columns: 0=Sun ... 6=Sat
+
+                          const backendDay = s.day;
+
+                          // Convert backend day → JS day index
+                          // 2→1 (Mon), 3→2 (Tue), ..., 7→6 (Sat), 8→0 (Sun)
+                          const calendarDayIdx =
+                            backendDay === 8 ? 0 : backendDay - 1;
+
+                          return (
+                            s.weeks.includes(getAcademicWeekNumber(weekStartDate)) &&
+                            calendarDayIdx === dayIdx
+                          );
+                        })
+
                           .map((s, idx) => {
-                            const { topMin, heightMin } = sessionGridStyle(s);
-                            const minuteToPx = 40 / 60;
-                            const topPx = topMin * minuteToPx;
-                            const heightPx = heightMin * minuteToPx;
+                            const startM = minutesFromHHMM(s.timeStart);
+                            const endM = minutesFromHHMM(s.timeEnd);
+
+                            const gridOffsetMinutes = START_HOUR * 60;
+
+                              const topPx = (startM - gridOffsetMinutes) * MINUTE_HEIGHT;
+                              const heightPx = (endM - startM) * MINUTE_HEIGHT;
+
+
 
                             return (
                               <div
                                 key={idx + '-' + s.timeStart}
                                 className="absolute left-2 right-2 rounded-lg shadow-sm overflow-hidden"
                                 style={{
-                                  top: topPx + 'px',
-                                  height: Math.max(26, heightPx) + 'px',
-                                  background: 'linear-gradient(90deg, #DBEAFE, #BFDBFE)',
-                                  borderLeft: '4px solid #3B82F6',
-                                }}
+                                    top: topPx + idx * 6 + 'px',
+                                    height: Math.max(26, heightPx) + 'px',
+                                    background: 'linear-gradient(90deg, #DBEAFE, #BFDBFE)',
+                                    borderLeft: '4px solid #3B82F6',
+                                  }}
+
                                 title={`${(s as any).courseCode ?? ''} ${
                                   (s as any).courseName ?? ''
                                 }\n${s.timeStart}-${s.timeEnd}\nRoom: ${s.room ?? '-'}`}>

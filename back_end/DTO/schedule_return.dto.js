@@ -1,6 +1,21 @@
 export const toFrontendSchedule = (dbSchedule) => {
   // 1. Safety check: If the course relation is broken/missing, return null
-  if (!dbSchedule.course) return null;
+  if (!dbSchedule.course) {
+    console.warn('Schedule missing course:', dbSchedule._id);
+    return {
+      courseCode: 'UNKNOWN',
+      courseName: 'Unknown Course',
+      group: dbSchedule.group,
+      credit: dbSchedule.credit,
+      sessions: dbSchedule.sessions.map((s) => ({
+        weeks: s.weeks,
+        day: s.day,
+        timeStart: s.timeStart,
+        timeEnd: s.timeEnd,
+        room: s.room?.name ?? 'TBA',
+      })),
+    };
+  }
 
   return {
     // Map database fields to your frontend interface names
