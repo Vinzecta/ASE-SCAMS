@@ -1,18 +1,82 @@
-# React + Vite
+# SCAMS - Smart Campus System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SCAMS (Smart Campus System) is a full-stack web application for campus classroom management. The system provides a centralized platform for room scheduling, classroom reservation, and academic resource management. It is built with React, Node.js, Express, and MongoDB, following a client-server architecture.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- User authentication with JWT
+- Classroom schedule management
+- Room booking and reservation
+- Calendar-based schedule visualization
+- Dashboard for campus resources
+- Course, teacher, room, and schedule management
+- RESTful API with Swagger documentation
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Frontend
 
-Note: This will impact Vite dev & build performances.
+- React.js
+- TypeScript
+- Vite
+- React Router DOM
+- Axios
 
-## Expanding the ESLint configuration
+### Backend
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Node.js
+- Express.js
+- JWT
+- Swagger
+
+### Database
+
+- MongoDB
+- Mongoose
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Vinzecta/ASE-SCAMS.git
+cd ASE-SCAMS
+```
+
+Install frontend dependencies:
+
+```bash
+npm install
+```
+
+Install backend dependencies:
+
+```bash
+cd back_end
+npm install
+```
+
+Create a `.env` file inside the `back_end` directory:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+```
+
+Run the backend server:
+
+```bash
+cd back_end
+npm start
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+## License
+
+This project was developed for educational purposes
